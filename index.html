@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사서 연수 — 프로그램 기획 방향성 그래프</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#fff;--bg2:#f7f6f3;--bg3:#efefeb;--text:#1a1a1a;--text2:#5a5a5a;--text3:#999;--border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);--blue:#3266ad;--orange:#D85A30;--r:10px;--rs:6px}
+@media(prefers-color-scheme:dark){:root{--bg:#1e1e1e;--bg2:#2a2a2a;--bg3:#333;--text:#f0f0f0;--text2:#aaa;--text3:#666;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2)}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh}
+.page{display:none;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem}
+.page.on{display:flex}
+.box{background:var(--bg);border-radius:var(--r);border:.5px solid var(--border);padding:2rem;max-width:460px;width:100%}
+h1{font-size:20px;font-weight:600;margin-bottom:6px}
+.sub{font-size:13px;color:var(--text2);margin-bottom:1.5rem;line-height:1.6}
+.field{margin-bottom:1rem}
+.field label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px;font-weight:500}
+.field input{width:100%;padding:8px 12px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:14px;background:var(--bg);color:var(--text)}
+.field input:focus{outline:none;border-color:var(--blue)}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;padding:10px;margin-bottom:8px;border:.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:14px;cursor:pointer;transition:all .15s}
+.btn:hover{background:var(--bg2)}
+.btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn.primary:hover{opacity:.85}
+.btn.blue{border-color:var(--blue);color:var(--blue)}
+.btn.blue:hover{background:#E6F1FB}
+.btn.danger{border-color:#E24B4A;color:#A32D2D}
+.btn.danger:hover{background:#FCEBEB}
+.btn.sm{width:auto;padding:6px 12px;font-size:12px;margin:0}
+.msg{font-size:13px;padding:8px 12px;border-radius:var(--rs);margin-top:8px}
+.msg.ok{background:#EAF3DE;color:#3B6D11}
+.msg.err{background:#FCEBEB;color:#A32D2D}
+.msg.info{background:#E6F1FB;color:#185FA5}
+.divider{display:flex;align-items:center;gap:8px;margin:1rem 0;font-size:12px;color:var(--text3)}
+.divider::before,.divider::after{content:'';flex:1;border-top:.5px solid var(--border)}
+#app{display:none;min-height:100vh}
+#app.on{display:block}
+.topbar{background:var(--bg);border-bottom:.5px solid var(--border);height:50px;padding:0 1.25rem;display:flex;align-items:center;position:sticky;top:0;z-index:100}
+.topbar-title{font-size:14px;font-weight:600;margin-right:auto}
+.tab{height:100%;padding:0 13px;border:none;background:none;color:var(--text2);font-size:13px;cursor:pointer;border-bottom:2px solid transparent}
+.tab.on{color:var(--text);border-bottom-color:var(--text);font-weight:500}
+.content{max-width:680px;margin:0 auto;padding:1.25rem 1rem 3rem}
+.hide{display:none!important}
+.card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--r);padding:1.25rem 1.5rem;margin-bottom:1rem}
+.card-title{font-size:14px;font-weight:500;margin-bottom:.75rem}
+.name-row{display:flex;gap:8px;align-items:center;margin-bottom:1rem}
+.nl{font-size:13px;color:var(--text2);white-space:nowrap}
+.ni{flex:1;padding:7px 11px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:14px;background:var(--bg);color:var(--text)}
+.ni:focus{outline:none;border-color:var(--blue)}
+.kw-head{display:grid;grid-template-columns:1fr 90px 90px;gap:6px;font-size:11px;color:var(--text3);margin-bottom:4px;padding:0 2px}
+.kw-row{display:grid;grid-template-columns:1fr 90px 90px;gap:6px;margin-bottom:6px;align-items:center}
+.ki{width:100%;padding:6px 8px;border:.5px solid var(--border);border-radius:var(--rs);font-size:13px;background:var(--bg);color:var(--text)}
+.ss{width:100%;padding:5px 2px;border:.5px solid var(--border);border-radius:var(--rs);font-size:13px;background:var(--bg);color:var(--text);text-align:center}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:1rem}
+.acts .btn{width:auto;padding:7px 16px;margin:0}
+.radar-wrap{width:100%;max-width:440px;margin:0 auto}
+.legend{display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:12px;color:var(--text2)}
+.legend span{display:flex;align-items:center;gap:5px}
+.ld{width:16px;height:3px;border-radius:2px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:1rem}
+.stat{background:var(--bg2);border-radius:var(--rs);padding:10px 12px}
+.stat-n{font-size:22px;font-weight:600}
+.stat-l{font-size:11px;color:var(--text2);margin-top:2px}
+.mlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:8px;margin-bottom:.5rem}
+.mc{background:var(--bg2);border-radius:var(--rs);padding:10px 12px;cursor:pointer;border:.5px solid var(--border)}
+.mc:hover{border-color:var(--border2);background:var(--bg)}
+.mc.sel{border-color:var(--text);background:var(--bg)}
+.mc-name{font-size:13px;font-weight:500}
+.mc-meta{font-size:11px;color:var(--text2);margin-top:3px}
+.hr{border:none;border-top:.5px solid var(--border);margin:1.25rem 0}
+.live{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:#EAF3DE;color:#3B6D11;margin-left:8px}
+.empty{text-align:center;color:var(--text2);font-size:14px;padding:2.5rem 1rem}
+.itop{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
+.sbox{background:var(--bg2);border:1.5px dashed var(--border2);border-radius:var(--rs);padding:14px;margin-bottom:1rem}
+.sbox p{font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.6}
+.slink{font-size:11px;color:var(--blue);word-break:break-all;background:var(--bg);border:.5px solid var(--border);border-radius:var(--rs);padding:8px 10px;margin-bottom:8px;display:block}
+.saved-item{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border-radius:var(--rs);padding:9px 12px;margin-bottom:6px;border:.5px solid var(--border)}
+</style>
+</head>
+<body>
+
+<!-- 시작 -->
+<div id="p-start" class="page on">
+  <div class="box">
+    <h1>📚 사서 연수 기획 그래프</h1>
+    <p class="sub">프로그램 방향성 키워드 8가지를 설정하고<br>As is / To be 방사형 그래프를 함께 만들어보세요.</p>
+    <button class="btn primary" onclick="go('p-create')">➕ 새 세션 만들기 (강사용)</button>
+    <button class="btn blue" onclick="go('p-restore')">📂 이전 세션 불러오기 (강사용)</button>
+    <div class="divider">연수생</div>
+    <button class="btn" onclick="goJoinIfUrl()">🔑 세션 입장하기 (연수생용)</button>
+  </div>
+</div>
+
+<!-- 강사: 새 세션 -->
+<div id="p-create" class="page">
+  <div class="box">
+    <h1>새 세션 만들기</h1>
+    <p class="sub">세션을 생성하면 연수생에게 공유할 링크가 만들어집니다.</p>
+    <div class="field"><label>강사 이름 / 기관</label><input type="text" id="create-name" placeholder="예: 홍길동 / 국립중앙도서관"></div>
+    <button class="btn primary" onclick="createSession()">세션 생성하기</button>
+    <button class="btn" onclick="go('p-start')">← 뒤로</button>
+    <div id="create-msg"></div>
+  </div>
+</div>
+
+<!-- 강사: 이전 세션 -->
+<div id="p-restore" class="page">
+  <div class="box">
+    <h1>이전 세션 불러오기</h1>
+    <p class="sub">이전 세션의 누적 자료를 다시 볼 수 있습니다.</p>
+    <div id="restore-list"></div>
+    <div class="field" style="margin-top:.5rem"><label>공유 링크 직접 붙여넣기</label><input type="text" id="restore-link" placeholder="https://...?b=..."></div>
+    <button class="btn primary" onclick="restoreByLink()">불러오기</button>
+    <button class="btn" onclick="go('p-start')">← 뒤로</button>
+    <div id="restore-msg"></div>
+  </div>
+</div>
+
+<!-- 연수생: 입장 -->
+<div id="p-join" class="page">
+  <div class="box">
+    <h1>세션 입장</h1>
+    <p class="sub">강사에게 받은 링크로 접속했습니다.<br>이름을 입력하고 입장하세요.</p>
+    <div class="field"><label>내 이름 / 기관</label><input type="text" id="join-name" placeholder="예: 김사서 / 부산시립도서관"></div>
+    <button class="btn primary" onclick="joinSession()">입장하기</button>
+    <button class="btn" onclick="go('p-start')">← 뒤로</button>
+    <div id="join-msg"></div>
+  </div>
+</div>
+
+<!-- 앱 -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-title">📚 사서 연수 기획 그래프</div>
+    <button class="tab on" id="tb-s" onclick="showTab('s')">연수생 입력</button>
+    <button class="tab" id="tb-i" onclick="showTab('i')">강사 대시보드</button>
+  </div>
+  <div id="pane-s" class="content">
+    <div class="card">
+      <div class="card-title">프로그램 기획 방향성 키워드 설정</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.6">8개의 키워드를 입력하고, 현재(As is)와 목표(To be)를 5점 척도로 설정한 뒤 제출하세요.</p>
+      <div class="name-row"><span class="nl">이름 / 기관</span><input class="ni" id="sname" placeholder="예: 김사서 / 부산시립도서관"></div>
+      <div class="kw-head"><span>키워드</span><span style="text-align:center">As is</span><span style="text-align:center">To be</span></div>
+      <div id="kw-rows"></div>
+      <div class="acts">
+        <button class="btn primary" onclick="submitStudent()">✓ 제출하기</button>
+        <button class="btn" onclick="doPreview()">◎ 미리보기</button>
+        <button class="btn" onclick="resetForm()">↺ 초기화</button>
+      </div>
+      <div id="smsg"></div>
+    </div>
+    <div class="card hide" id="preview-card">
+      <div class="card-title">내 그래프 미리보기</div>
+      <div class="radar-wrap"><canvas id="preview-radar"></canvas></div>
+      <div class="legend"><span><span class="ld" style="background:var(--blue)"></span>As is</span><span><span class="ld" style="background:var(--orange)"></span>To be</span></div>
+    </div>
+  </div>
+  <div id="pane-i" class="content hide">
+    <div class="card">
+      <div class="itop">
+        <div><span class="card-title" style="margin:0">강사 대시보드</span><span class="live">● 실시간</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn sm" onclick="loadInstructor()">↺ 새로고침</button>
+          <button class="btn sm danger" onclick="clearAll()">🗑 전체 삭제</button>
+        </div>
+      </div>
+      <div class="sbox">
+        <p>아래 링크를 연수생에게 공유하세요. 링크 클릭 후 이름만 입력하면 바로 입장합니다.</p>
+        <span class="slink" id="share-link"></span>
+        <button class="btn sm" onclick="copyLink()">📋 링크 복사</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-n" id="st-n">-</div><div class="stat-l">제출 인원</div></div>
+        <div class="stat"><div class="stat-n" id="st-a" style="font-size:14px">-</div><div class="stat-l">-</div></div>
+        <div class="stat"><div class="stat-n" id="st-t" style="font-size:14px">-</div><div class="stat-l">-</div></div>
+        <div class="stat"><div class="stat-n" id="st-l">-</div><div class="stat-l">최근 제출</div></div>
+      </div>
+      <div id="inst-body"><div class="empty">📭 아직 제출된 데이터가 없습니다.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const KEY = "$2a$10$ORjCA7N49qVYMlPWQ6C4dOHpzVegL1wHHcphEO6Ah3PI4KSdhBx2K";
+const API = "https://api.jsonbin.io/v3/b";
+const KW  = ["독서동기 강화","신매체기반","감상","독서흥미","사회적 독서 중심성","정보 생산 중심성","정보 리터러시 기반성","독서수준 향상"];
+let BIN="", USER="", timer=null;
+
+/* JSONBin */
+function hdrs(w){const h={"X-Master-Key":KEY};if(w)h["Content-Type"]="application/json";else h["X-Bin-Meta"]="false";return h;}
+async function binCreate(data){
+  const r=await fetch(API,{method:"POST",headers:{...hdrs(true),"X-Bin-Name":"radar-"+Date.now()},body:JSON.stringify(data)});
+  const j=await r.json();
+  if(!r.ok) throw new Error(j.message||"생성실패 "+r.status);
+  return j.metadata.id;
+}
+async function binRead(){
+  const r=await fetch(API+"/"+BIN+"/latest",{headers:hdrs(false)});
+  const j=await r.json();
+  if(!r.ok) throw new Error(j.message||"읽기실패 "+r.status);
+  // JSONBin v3: { record: {...} } 또는 직접 데이터
+  if(j.record !== undefined) return j.record;
+  if(j.submissions !== undefined) return j;
+  return j;
+}
+async function binWrite(data){
+  const r=await fetch(API+"/"+BIN,{method:"PUT",headers:hdrs(true),body:JSON.stringify(data)});
+  if(!r.ok){const j=await r.json();throw new Error(j.message||"쓰기실패 "+r.status);}
+}
+
+/* 화면 전환 */
+function go(id){
+  document.querySelectorAll(".page").forEach(el=>el.classList.remove("on"));
+  document.getElementById("app").classList.remove("on");
+  const el=document.getElementById(id);
+  if(el){el.classList.add("on");}
+}
+function goApp(){
+  document.querySelectorAll(".page").forEach(el=>el.classList.remove("on"));
+  document.getElementById("app").classList.add("on");
+}
+
+/* 로컬 저장 */
+function getSaved(){try{return JSON.parse(localStorage.getItem("radar_s")||"[]")}catch(e){return[]}}
+function addSaved(binId,label){
+  const list=getSaved().filter(s=>s.b!==binId);
+  list.unshift({b:binId,label,d:new Date().toLocaleDateString("ko-KR")});
+  localStorage.setItem("radar_s",JSON.stringify(list.slice(0,10)));
+}
+
+/* 강사: 새 세션 */
+async function createSession(){
+  const name=document.getElementById("create-name").value.trim()||"강사";
+  msg("create-msg","세션 생성 중...","info");
+  try{
+    BIN=await binCreate({submissions:[]});
+    USER=name;
+    addSaved(BIN,name+" · "+new Date().toLocaleDateString("ko-KR"));
+    enterApp(true);
+  }catch(e){msg("create-msg","❌ "+e.message,"err");}
+}
+
+/* 강사: 이전 세션 복원 */
+function buildRestoreList(){
+  const saved=getSaved();
+  const el=document.getElementById("restore-list");
+  if(!saved.length){el.innerHTML='<p style="font-size:13px;color:var(--text2);margin-bottom:1rem">저장된 세션이 없습니다.</p>';return;}
+  el.innerHTML=saved.map((s,i)=>`<div class="saved-item"><div><div style="font-size:13px;font-weight:500">${s.label}</div><div style="font-size:11px;color:var(--text3)">${s.d}</div></div><button class="btn sm" onclick="restoreIdx(${i})">불러오기</button></div>`).join("");
+}
+async function restoreIdx(i){
+  const s=getSaved()[i];if(!s)return;
+  msg("restore-msg","불러오는 중...","info");
+  try{BIN=s.b;await binRead();USER="강사";enterApp(true);}
+  catch(e){msg("restore-msg","❌ "+e.message,"err");BIN="";}
+}
+async function restoreByLink(){
+  const raw=document.getElementById("restore-link").value.trim();
+  let binId="";
+  try{binId=new URL(raw).searchParams.get("b")||"";}catch(e){binId=raw;}
+  if(!binId){msg("restore-msg","링크를 붙여넣어 주세요.","err");return;}
+  msg("restore-msg","확인 중...","info");
+  try{
+    BIN=binId;await binRead();USER="강사";
+    addSaved(BIN,"강사(복원) · "+new Date().toLocaleDateString("ko-KR"));
+    enterApp(true);
+  }catch(e){msg("restore-msg","❌ "+e.message,"err");BIN="";}
+}
+
+/* 연수생: URL에 ?b= 있으면 자동으로 입장 화면 */
+function goJoinIfUrl(){
+  const b=new URLSearchParams(location.search).get("b");
+  if(b){BIN=b;go("p-join");}
+  else{alert("강사에게 받은 링크로 접속해 주세요.");}
+}
+async function joinSession(){
+  const name=document.getElementById("join-name").value.trim();
+  if(!name){msg("join-msg","이름을 입력해주세요.","err");return;}
+  msg("join-msg","확인 중...","info");
+  try{
+    await binRead();
+    USER=name;enterApp(false);
+  }catch(e){msg("join-msg","❌ "+e.message,"err");}
+}
+
+/* 앱 진입 */
+function enterApp(isInst){
+  document.getElementById("sname").value=USER;
+  const url=location.origin+location.pathname+"?b="+BIN;
+  document.getElementById("share-link").textContent=url;
+  buildRows();
+  goApp();
+  showTab(isInst?"i":"s");
+}
+function copyLink(){
+  const url=document.getElementById("share-link").textContent;
+  navigator.clipboard.writeText(url).then(()=>alert("✅ 링크 복사 완료!\n카카오톡으로 연수생에게 보내주세요.\n\n연수생은 링크 클릭 → 이름 입력 → 입장!"))
+  .catch(()=>prompt("아래 링크를 복사하세요:",url));
+}
+
+/* 폼 */
+function buildRows(){
+  const c=document.getElementById("kw-rows");c.innerHTML="";
+  KW.forEach((kw,i)=>{
+    const d=document.createElement("div");d.className="kw-row";
+    d.innerHTML=`<input class="ki" id="kw${i}" value="${kw}">
+    <select class="ss" id="a${i}">${[0,1,2,3,4,5].map(v=>`<option${v===3?" selected":""}>${v}점</option>`).join("")}</select>
+    <select class="ss" id="t${i}">${[0,1,2,3,4,5].map(v=>`<option${v===4?" selected":""}>${v}점</option>`).join("")}</select>`;
+    c.appendChild(d);
+  });
+}
+function getForm(){
+  const name=document.getElementById("sname").value.trim()||"익명";
+  const keywords=[],asis=[],tobe=[];
+  for(let i=0;i<8;i++){
+    keywords.push(document.getElementById("kw"+i).value.trim()||"키워드"+(i+1));
+    asis.push(parseInt(document.getElementById("a"+i).value));
+    tobe.push(parseInt(document.getElementById("t"+i).value));
+  }
+  return{name,keywords,asis,tobe};
+}
+async function submitStudent(){
+  const d=getForm();
+  msg("smsg","저장 중...","info");
+  try{
+    // 1) 현재 데이터 읽기
+    let subs=[];
+    try{
+      const rec=await binRead();
+      console.log("submit - 현재 bin 데이터:", JSON.stringify(rec));
+      if(rec && Array.isArray(rec.submissions)) subs=rec.submissions;
+    }catch(e){ console.warn("읽기 실패, 빈 배열로 시작:", e); subs=[]; }
+
+    // 2) 이름 중복 처리
+    const idx=subs.findIndex(x=>x.name===d.name);
+    d.at=new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"});
+    if(idx>=0) subs[idx]=d; else subs.push(d);
+
+    // 3) 저장
+    const payload={submissions:subs};
+    console.log("저장할 데이터:", JSON.stringify(payload));
+    await binWrite(payload);
+    msg("smsg","✓ 제출 완료! ("+d.name+") — 총 "+subs.length+"명","ok");
+    doPreview();
+  }catch(e){
+    console.error("submitStudent error:", e);
+    msg("smsg","❌ "+e.message,"err");
+  }
+}
+function doPreview(){
+  const d=getForm();
+  document.getElementById("preview-card").classList.remove("hide");
+  setTimeout(()=>drawRadar("preview-radar",d.keywords,d.asis,d.tobe),50);
+}
+function resetForm(){
+  document.getElementById("sname").value=USER||"";
+  buildRows();
+  document.getElementById("preview-card").classList.add("hide");
+  document.getElementById("smsg").innerHTML="";
+}
+
+/* 차트 */
+function drawRadar(id,labels,a,t){
+  const c=document.getElementById(id);if(!c)return;
+  const ex=Chart.getChart(c);if(ex)ex.destroy();
+  new Chart(c,{type:"radar",data:{labels,datasets:[
+    {label:"As is",data:a,borderColor:"#3266ad",backgroundColor:"rgba(50,102,173,0.1)",borderWidth:2,pointBackgroundColor:"#3266ad",borderDash:[5,3]},
+    {label:"To be",data:t,borderColor:"#D85A30",backgroundColor:"rgba(216,90,48,0.08)",borderWidth:2,pointBackgroundColor:"#D85A30"}
+  ]},options:{responsive:true,maintainAspectRatio:true,
+    scales:{r:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},pointLabels:{font:{size:12}}}},
+    plugins:{legend:{display:false}}}});
+}
+
+/* 강사 대시보드 */
+async function loadInstructor(){
+  if(!BIN)return;
+  try{
+    const rec=await binRead();
+    console.log("loadInstructor rec:", JSON.stringify(rec));
+    const subs=rec&&Array.isArray(rec.submissions)?rec.submissions:[];
+    renderInst(subs);
+  }catch(e){
+    console.error("loadInstructor error:", e);
+    renderInst([]);
+  }
+}
+function renderInst(arr){
+  document.getElementById("st-n").textContent=arr.length;
+  document.getElementById("st-a").textContent="-";
+  document.getElementById("st-t").textContent="-";
+  document.getElementById("st-l").textContent=arr.length?arr[arr.length-1].at||"-":"-";
+  if(!arr.length){
+    document.getElementById("inst-body").innerHTML='<div class="empty">📭 아직 제출된 데이터가 없습니다.</div>';
+    return;
+  }
+  const mems=arr.map((x,i)=>`
+    <div class="mc" onclick="showMember(${i})" id="mc${i}">
+      <div class="mc-name">${x.name}</div>
+      <div class="mc-meta">${x.at||""} · As is ${(x.asis.reduce((a,b)=>a+b,0)/8).toFixed(1)} / To be ${(x.tobe.reduce((a,b)=>a+b,0)/8).toFixed(1)}</div>
+    </div>`).join("");
+  document.getElementById("inst-body").innerHTML=`
+    <div class="card-title">제출 현황 (${arr.length}명) — 이름을 클릭하면 그래프를 볼 수 있습니다</div>
+    <div class="mlist">${mems}</div>
+    <div id="mdetail" class="hide">
+      <hr class="hr">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <div class="card-title" id="mdetail-title" style="margin:0"></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn sm" id="btn-prev" onclick="stepMember(-1)">◀ 이전</button>
+          <button class="btn sm" id="btn-next" onclick="stepMember(1)">다음 ▶</button>
+        </div>
+      </div>
+      <div class="radar-wrap"><canvas id="member-radar"></canvas></div>
+      <div class="legend"><span><span class="ld" style="background:var(--blue)"></span>As is (현재)</span><span><span class="ld" style="background:var(--orange)"></span>To be (목표)</span></div>
+      <div id="kw-table" style="margin-top:1rem"></div>
+    </div>`;
+  window._idata=arr;
+  window._midx=-1;
+}
+
+function showMember(i){
+  window._midx=i;
+  document.querySelectorAll(".mc").forEach(e=>e.classList.remove("sel"));
+  const mc=document.getElementById("mc"+i);if(mc){mc.classList.add("sel");mc.scrollIntoView({behavior:"smooth",block:"nearest"});}
+  const d=(window._idata||[])[i];if(!d)return;
+  const det=document.getElementById("mdetail");if(!det)return;
+  det.classList.remove("hide");
+  document.getElementById("mdetail-title").textContent=d.name+"의 방사형 그래프";
+  setTimeout(()=>drawRadar("member-radar",d.keywords,d.asis,d.tobe),60);
+  // 키워드 점수 표
+  const rows=d.keywords.map((kw,ki)=>`
+    <tr>
+      <td style="padding:5px 8px;font-size:13px">${kw}</td>
+      <td style="padding:5px 8px;text-align:center;font-size:13px;color:var(--blue)">${d.asis[ki]}점</td>
+      <td style="padding:5px 8px;text-align:center;font-size:13px;color:var(--orange)">${d.tobe[ki]}점</td>
+      <td style="padding:5px 8px;text-align:center;font-size:13px;color:${d.tobe[ki]-d.asis[ki]>0?"#3B6D11":d.tobe[ki]-d.asis[ki]<0?"#A32D2D":"var(--text2)"}">${d.tobe[ki]-d.asis[ki]>0?"+":""}${d.tobe[ki]-d.asis[ki]}</td>
+    </tr>`).join("");
+  document.getElementById("kw-table").innerHTML=`
+    <table style="width:100%;border-collapse:collapse;border:.5px solid var(--border);border-radius:var(--rs);overflow:hidden">
+      <thead><tr style="background:var(--bg2)">
+        <th style="padding:6px 8px;text-align:left;font-size:12px;color:var(--text2);font-weight:500">키워드</th>
+        <th style="padding:6px 8px;text-align:center;font-size:12px;color:var(--blue);font-weight:500">As is</th>
+        <th style="padding:6px 8px;text-align:center;font-size:12px;color:var(--orange);font-weight:500">To be</th>
+        <th style="padding:6px 8px;text-align:center;font-size:12px;color:var(--text2);font-weight:500">변화</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function stepMember(dir){
+  const arr=window._idata||[];
+  if(!arr.length)return;
+  const next=((window._midx||0)+dir+arr.length)%arr.length;
+  showMember(next);
+}
+async function clearAll(){
+  if(!confirm("모든 제출 데이터를 삭제하시겠습니까?"))return;
+  await binWrite({submissions:[]});
+  loadInstructor();
+}
+
+/* 탭 */
+function showTab(t){
+  ["s","i"].forEach(id=>{
+    document.getElementById("tb-"+id).classList.toggle("on",id===t);
+    document.getElementById("pane-"+id).classList.toggle("hide",id!==t);
+  });
+  if(t==="i"){loadInstructor();if(timer)clearInterval(timer);timer=setInterval(loadInstructor,20000);}
+  else{if(timer){clearInterval(timer);timer=null;}}
+}
+
+function msg(id,txt,type){
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML=`<div class="msg ${type}">${txt}</div>`;
+  if(type!=="info")setTimeout(()=>{el.innerHTML="";},5000);
+}
+
+/* 초기화 */
+window.addEventListener("DOMContentLoaded",()=>{
+  const b=new URLSearchParams(location.search).get("b");
+  if(b){BIN=b;go("p-join");}
+  else{go("p-start");buildRestoreList();}
+});
+</script>
+</body>
+</html>
